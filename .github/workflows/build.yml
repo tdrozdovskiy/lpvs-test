@@ -1,0 +1,49 @@
+name: Build
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    # - name: Harden Runner
+    #   uses: step-security/harden-runner@63c24ba6bd7ba022e95695ff85de572c04a18142 # v2.7.0
+    #   with:
+    #     egress-policy: audit
+
+    # - name: Checkout repository
+    #   run: git clone --depth 1 https://github.com/Samsung/LPVS.git
+    # - name: Set up JDK 17
+    #   uses: actions/setup-java@9704b39bf258b59bc04b50fa2dd55e9ed76b47a8 # v4.1.0
+    #   with:
+    #     java-version: '17'
+    #     distribution: 'temurin'
+    #     cache: maven
+    # - name: Build with Maven
+    #   run: |
+    #     cd LPVS
+    #     mvn -B package --file pom.xml
+
+    - name: Get ip 
+      run: |
+        ip addr show
+        sleep 10
+        echo "eth0"
+        ip -br addr show eth0 | awk '{print $3}' | cut -d "/" -f 1
+        sleep 10
+        echo "docker0"
+        ip -br addr show docker0 | awk '{print $3}' | cut -d "/" -f 1
+        sleep 50
+
+    - name: Create webhook
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        curl -X POST \
+          -H "Authorization: token $GH_TOKEN" \
+          -H "Accept: application/vnd.github.v3+json" \
+          https://api.github.com/repos/tdrozdovskiy/lpvs-test/hooks \
+          -d '{"name": "web", "config": {"url": "http://example.com/webhook", "content_type": "json"}, "events": ["push"]}'    
